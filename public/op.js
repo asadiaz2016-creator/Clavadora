@@ -386,17 +386,10 @@ function compartirReporte() {
   document.getElementById('modalReporte').classList.remove('hidden');
 }
 
-async function enviarReporte() {
+function enviarReporte() {
   const texto = document.getElementById('reporteTexto').textContent;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: 'Reporte Clavadora', text: texto });
-    } catch (e) { /* cancelado */ }
-  } else {
-    // Fallback: copiar al portapapeles
-    await navigator.clipboard.writeText(texto);
-    alert('Reporte copiado al portapapeles. Pégalo en WhatsApp o Email.');
-  }
+  const url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  window.open(url, '_blank');
 }
 
 // ── CERRAR TURNO ─────────────────────────────────────────────────────────────
