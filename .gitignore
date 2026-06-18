@@ -1,0 +1,5 @@
+node_modules/
+produccion.db
+*.db-shm
+*.db-wal
+.DS_Store

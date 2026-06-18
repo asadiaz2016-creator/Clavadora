@@ -1,0 +1,185 @@
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --primary: #1a56db;
+  --danger: #e02424;
+  --warning: #d97706;
+  --success: #057a55;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --header: #1e293b;
+}
+
+html, body { height: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 16px; }
+
+/* ── PANTALLAS ─────────────────────────────────────────────────────────────── */
+.pantalla { display: none; min-height: 100vh; }
+.pantalla.activa { display: block; }
+
+/* ── INICIO ─────────────────────────────────────────────────────────────────── */
+#pantallaInicio { background: linear-gradient(160deg, #0f172a 0%, #1e40af 100%); display: none; }
+#pantallaInicio.activa { display: flex; align-items: center; justify-content: center; }
+
+.inicio-wrap { width: 100%; max-width: 400px; padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+.logo-area { text-align: center; margin-bottom: .5rem; }
+.logo-icon { font-size: 3.5rem; }
+.logo-area h1 { color: white; font-size: 2rem; font-weight: 800; margin-top: .25rem; }
+.fecha-hoy { color: #93c5fd; font-size: 1rem; margin-top: .25rem; }
+
+.instruccion { color: #cbd5e1; text-align: center; font-size: .95rem; }
+
+.btn-turno {
+  background: rgba(255,255,255,.1);
+  border: 1.5px solid rgba(255,255,255,.2);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  display: flex; flex-direction: column; gap: .2rem;
+  cursor: pointer; width: 100%;
+  transition: background .15s;
+  text-align: left;
+}
+.btn-turno:active { background: rgba(255,255,255,.2); }
+.turno-icon { font-size: 1.75rem; }
+.turno-nombre { color: white; font-size: 1.2rem; font-weight: 700; }
+.turno-hora { color: #94a3b8; font-size: .875rem; }
+
+/* ── HEADER OPERADOR ────────────────────────────────────────────────────────── */
+.op-header {
+  background: var(--header);
+  color: white;
+  padding: 1rem 1.25rem;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 10;
+}
+.op-turno { font-size: 1.1rem; font-weight: 700; }
+.op-fecha { font-size: .8rem; color: #94a3b8; margin-top: .1rem; }
+.op-total-wrap { text-align: right; }
+.op-total-num { font-size: 2rem; font-weight: 800; color: #60a5fa; line-height: 1; }
+.op-total-label { display: block; font-size: .7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
+
+/* ── BOTONES ACCIÓN ─────────────────────────────────────────────────────────── */
+.acciones { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; padding: 1rem; }
+
+.btn-accion {
+  border: none; border-radius: 16px; padding: 1.25rem .75rem;
+  display: flex; flex-direction: column; align-items: center; gap: .4rem;
+  cursor: pointer; font-size: 1rem; font-weight: 700;
+  transition: transform .1s, filter .1s;
+  min-height: 100px;
+}
+.btn-accion:active { transform: scale(.96); filter: brightness(.9); }
+.accion-icon { font-size: 2rem; }
+.btn-prod { background: var(--primary); color: white; }
+.btn-muerto { background: var(--warning); color: white; }
+
+/* ── RESUMEN ────────────────────────────────────────────────────────────────── */
+.resumen-section { padding: 0 1rem; }
+.resumen-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: .75rem; }
+.res-tab {
+  flex: 1; padding: .75rem; background: none; border: none;
+  font-size: .9rem; font-weight: 600; color: var(--muted);
+  border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer;
+}
+.res-tab.activa { color: var(--primary); border-bottom-color: var(--primary); }
+.res-contenido { display: none; }
+.res-contenido.activa { display: block; }
+
+.minutos-total { background: #fef3c7; border-radius: 10px; padding: .6rem 1rem; margin-bottom: .75rem; font-size: .9rem; color: #92400e; }
+
+/* ── LISTA REGISTROS ────────────────────────────────────────────────────────── */
+.lista-registros { display: flex; flex-direction: column; gap: .5rem; padding-bottom: .5rem; }
+.empty-state { text-align: center; color: var(--muted); padding: 2rem; font-size: .9rem; }
+
+.registro-item {
+  background: white; border-radius: 12px;
+  padding: .875rem 1rem;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.reg-info { display: flex; flex-direction: column; gap: .15rem; }
+.reg-modelo { font-weight: 700; font-size: 1rem; }
+.reg-hora { font-size: .8rem; color: var(--muted); }
+.reg-right { display: flex; align-items: center; gap: .75rem; }
+.reg-cantidad { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+.reg-motivo { font-weight: 600; font-size: .95rem; }
+.reg-minutos { font-size: 1.4rem; font-weight: 800; color: var(--warning); }
+.btn-del { background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #cbd5e1; padding: .25rem; }
+.btn-del:active { color: var(--danger); }
+
+/* ── CERRAR TURNO ────────────────────────────────────────────────────────────── */
+.cerrar-wrap { padding: 1rem; padding-bottom: 2rem; }
+.btn-cerrar {
+  width: 100%; padding: 1rem; border: 2px solid var(--danger);
+  background: white; color: var(--danger); border-radius: 12px;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+}
+.btn-cerrar:active { background: #fff5f5; }
+
+/* ── MODALES ────────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  display: flex; align-items: flex-end; z-index: 100;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: white; width: 100%; border-radius: 24px 24px 0 0;
+  padding: 1.5rem 1.25rem 2.5rem;
+  max-height: 92vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: .75rem;
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .25rem; }
+.modal-header h2 { font-size: 1.2rem; font-weight: 800; }
+.btn-close { background: #f1f5f9; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 1rem; cursor: pointer; }
+
+.field-label { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.field-select, .field-input {
+  width: 100%; padding: .875rem 1rem;
+  border: 2px solid var(--border); border-radius: 12px;
+  font-size: 1rem; background: white;
+  -webkit-appearance: none; appearance: none;
+}
+.field-select:focus, .field-input:focus { outline: none; border-color: var(--primary); }
+.field-big { font-size: 1.75rem; font-weight: 700; text-align: center; padding: .75rem; }
+
+/* GRID DE MODELOS */
+.modelo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+.btn-modelo {
+  padding: .75rem .5rem; border: 2px solid var(--border);
+  border-radius: 10px; background: white;
+  font-size: .875rem; font-weight: 600; cursor: pointer; text-align: center;
+  transition: all .1s;
+}
+.btn-modelo.seleccionado { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+.btn-modelo:active { transform: scale(.97); }
+
+.btn-link { background: none; border: none; color: var(--primary); font-size: .875rem; font-weight: 600; cursor: pointer; text-align: left; padding: .25rem 0; }
+
+.btn-sm-add { background: var(--primary); color: white; border: none; border-radius: 10px; padding: .875rem 1.25rem; font-size: 1rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+/* MOTIVOS */
+.motivos-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+.btn-motivo {
+  padding: .875rem .5rem; border: 2px solid var(--border);
+  border-radius: 10px; background: white;
+  font-size: .875rem; font-weight: 600; cursor: pointer; text-align: center;
+  transition: all .1s;
+}
+.btn-motivo.seleccionado { border-color: var(--warning); background: #fffbeb; color: var(--warning); }
+.btn-motivo:active { transform: scale(.97); }
+
+.btn-guardar {
+  width: 100%; padding: 1.1rem; background: var(--primary); color: white;
+  border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 800;
+  cursor: pointer; margin-top: .5rem;
+}
+.btn-guardar:active { filter: brightness(.9); }
+.btn-guardar-muerto { background: var(--warning); }
+
+/* MISC */
+.hidden { display: none !important; }
+.error-msg { color: #dc2626; background: #fef2f2; border-radius: 10px; padding: .75rem 1rem; font-size: .9rem; }
