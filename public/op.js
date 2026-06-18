@@ -285,46 +285,102 @@ async function eliminarMuerto(id) {
 function compartirReporte() {
   const [y,m,d] = turnoActivo.fecha.split('-');
   const fecha = `${d}/${m}/${y}`;
+  const ahora = new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
 
-  // Totales por modelo
+  // Producción por modelo
   const porModelo = {};
   prodRows.forEach(r => {
     porModelo[r.modelo_nombre] = (porModelo[r.modelo_nombre] || 0) + r.cantidad;
   });
   const totalProd = prodRows.reduce((s, r) => s + r.cantidad, 0);
 
-  // Totales tiempo muerto
+  // Producción por hora
+  const porHora = {};
+  prodRows.forEach(r => {
+    porHora[r.hora] = (porHora[r.hora] || 0) + r.cantidad;
+  });
+
+  // Tiempos muertos por motivo
   const porMotivo = {};
   muertosRows.forEach(r => {
     porMotivo[r.motivo] = (porMotivo[r.motivo] || 0) + r.minutos;
   });
   const totalMin = muertosRows.reduce((s, r) => s + r.minutos, 0);
 
-  let txt = `CUSTOM CRATES & PALLETS, INC.\n`;
-  txt += `Reporte Turno ${turnoActivo.turno} — ${fecha}\n`;
-  txt += `${'─'.repeat(32)}\n\n`;
+  // Eficiencia (horas trabajadas estimadas vs tiempo muerto)
+  const horasConProduccion = Object.keys(porHora).length;
+  const eficiencia = totalMin > 0 && horasConProduccion > 0
+    ? Math.max(0, Math.round(100 - (totalMin / (horasConProduccion * 60)) * 100))
+    : 100;
+  const promXHora = horasConProduccion > 0
+    ? Math.round(totalProd / horasConProduccion)
+    : 0;
 
-  txt += `📦 PRODUCCIÓN\n`;
+  const SEP  = '================================';
+  const SEP2 = '--------------------------------';
+
+  let txt = '';
+  txt += `${SEP}\n`;
+  txt += ` CUSTOM CRATES & PALLETS, INC.\n`;
+  txt += `${SEP}\n`;
+  txt += ` Reporte de Producción\n`;
+  txt += ` Turno : ${turnoActivo.turno}\n`;
+  txt += ` Fecha : ${fecha}\n`;
+  txt += ` Hora  : ${ahora}\n`;
+  txt += `${SEP}\n\n`;
+
+  txt += `📦 RESUMEN DE PRODUCCIÓN\n`;
+  txt += `${SEP2}\n`;
   if (Object.keys(porModelo).length) {
-    Object.entries(porModelo).forEach(([modelo, cant]) => {
-      txt += `  ${modelo}: ${cant.toLocaleString()} pzs\n`;
-    });
-    txt += `  ──────────────────\n`;
-    txt += `  TOTAL: ${totalProd.toLocaleString()} piezas\n`;
+    const maxLen = Math.max(...Object.keys(porModelo).map(m => m.length));
+    Object.entries(porModelo)
+      .sort((a,b) => b[1]-a[1])
+      .forEach(([modelo, cant]) => {
+        const pad = ' '.repeat(Math.max(1, maxLen - modelo.length + 2));
+        txt += ` ${modelo}${pad}${cant.toLocaleString()} pzs\n`;
+      });
+    txt += `${SEP2}\n`;
+    txt += ` TOTAL           ${totalProd.toLocaleString()} pzs\n`;
+    txt += ` Promedio/hora   ${promXHora.toLocaleString()} pzs\n`;
   } else {
-    txt += `  Sin producción registrada\n`;
+    txt += ` Sin producción registrada\n`;
+  }
+
+  txt += `\n📊 PRODUCCIÓN POR HORA\n`;
+  txt += `${SEP2}\n`;
+  if (Object.keys(porHora).length) {
+    Object.entries(porHora)
+      .sort((a,b) => a[0].localeCompare(b[0]))
+      .forEach(([hora, cant]) => {
+        const barra = '█'.repeat(Math.min(10, Math.round(cant / Math.max(...Object.values(porHora)) * 10)));
+        txt += ` ${hora}  ${barra} ${cant}\n`;
+      });
+  } else {
+    txt += ` Sin registros\n`;
   }
 
   txt += `\n⏸ TIEMPOS MUERTOS\n`;
+  txt += `${SEP2}\n`;
   if (Object.keys(porMotivo).length) {
-    Object.entries(porMotivo).forEach(([motivo, min]) => {
-      txt += `  ${motivo}: ${min} min\n`;
-    });
-    txt += `  ──────────────────\n`;
-    txt += `  TOTAL: ${totalMin} minutos\n`;
+    Object.entries(porMotivo)
+      .sort((a,b) => b[1]-a[1])
+      .forEach(([motivo, min]) => {
+        txt += ` ${motivo}: ${min} min\n`;
+      });
+    txt += `${SEP2}\n`;
+    txt += ` TOTAL         ${totalMin} minutos\n`;
   } else {
-    txt += `  Sin tiempos muertos\n`;
+    txt += ` Sin tiempos muertos ✅\n`;
   }
+
+  txt += `\n⚡ EFICIENCIA DEL TURNO\n`;
+  txt += `${SEP2}\n`;
+  const barraEf = '█'.repeat(Math.round(eficiencia / 10)) + '░'.repeat(10 - Math.round(eficiencia / 10));
+  txt += ` [${barraEf}] ${eficiencia}%\n`;
+
+  txt += `\n${SEP}\n`;
+  txt += ` Generado por Sistema Clavadora\n`;
+  txt += `${SEP}\n`;
 
   document.getElementById('reporteTexto').textContent = txt;
   document.getElementById('modalReporte').classList.remove('hidden');

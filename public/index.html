@@ -12,23 +12,29 @@
 
   <!-- PANTALLA INICIO -->
   <div id="pantallaInicio" class="pantalla activa">
-    <div class="inicio-wrap">
-      <div class="logo-area">
-        <img src="logo.png" alt="Custom Crates & Pallets" class="logo-img" onerror="this.style.display='none'">
-        <h1>Custom Crates & Pallets</h1>
-        <p class="empresa-sub">Control de Producción</p>
-        <p id="fechaHoy" class="fecha-hoy"></p>
-      </div>
-      <p class="instruccion">Selecciona tu turno para comenzar</p>
+    <div class="inicio-hero">
+      <img src="logo.png" alt="Custom Crates & Pallets" class="hero-logo" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='block'">
+      <div id="logoFallback" class="hero-logo-fallback" style="display:none">🔨</div>
+      <div class="hero-divider"></div>
+      <h1 class="hero-nombre">Custom Crates<br>&amp; Pallets, Inc.</h1>
+      <p class="hero-sub">Control de Producción</p>
+    </div>
+    <div class="inicio-body">
+      <p id="fechaHoy" class="fecha-hoy"></p>
+      <p class="instruccion">Selecciona tu turno</p>
       <button class="btn-turno" onclick="seleccionarTurno('Matutino')">
         <span class="turno-icon">🌅</span>
-        <span class="turno-nombre">Matutino</span>
-        <span class="turno-hora">6:00 am – 2:00 pm</span>
+        <div class="turno-texto">
+          <span class="turno-nombre">Turno Matutino</span>
+          <span class="turno-hora">6:00 am – 2:00 pm</span>
+        </div>
       </button>
       <button class="btn-turno" onclick="seleccionarTurno('Vespertino')">
         <span class="turno-icon">🌇</span>
-        <span class="turno-nombre">Vespertino</span>
-        <span class="turno-hora">2:00 pm – 10:00 pm</span>
+        <div class="turno-texto">
+          <span class="turno-nombre">Turno Vespertino</span>
+          <span class="turno-hora">2:00 pm – 10:00 pm</span>
+        </div>
       </button>
       <div id="errorInicio" class="error-msg hidden"></div>
     </div>
