@@ -27,9 +27,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .inicio-wrap { width: 100%; max-width: 400px; padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 
 .logo-area { text-align: center; margin-bottom: .5rem; }
-.logo-icon { font-size: 3.5rem; }
-.logo-area h1 { color: white; font-size: 2rem; font-weight: 800; margin-top: .25rem; }
-.fecha-hoy { color: #93c5fd; font-size: 1rem; margin-top: .25rem; }
+.logo-img { width: 90px; height: 90px; object-fit: contain; margin-bottom: .5rem; filter: drop-shadow(0 4px 12px rgba(0,0,0,.4)); }
+.logo-area h1 { color: white; font-size: 1.6rem; font-weight: 800; margin-top: .25rem; line-height: 1.2; }
+.empresa-sub { color: #93c5fd; font-size: .85rem; margin-top: .15rem; }
+.fecha-hoy { color: #64748b; font-size: .875rem; margin-top: .5rem; }
 
 .instruccion { color: #cbd5e1; text-align: center; font-size: .95rem; }
 
@@ -52,12 +53,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .op-header {
   background: var(--header);
   color: white;
-  padding: 1rem 1.25rem;
+  padding: .875rem 1.25rem;
   display: flex; justify-content: space-between; align-items: center;
   position: sticky; top: 0; z-index: 10;
 }
-.op-turno { font-size: 1.1rem; font-weight: 700; }
-.op-fecha { font-size: .8rem; color: #94a3b8; margin-top: .1rem; }
+.op-header-left { display: flex; align-items: center; gap: .75rem; }
+.logo-header { width: 36px; height: 36px; object-fit: contain; }
+.op-turno { font-size: 1rem; font-weight: 700; }
+.op-fecha { font-size: .75rem; color: #94a3b8; margin-top: .1rem; }
 .op-total-wrap { text-align: right; }
 .op-total-num { font-size: 2rem; font-weight: 800; color: #60a5fa; line-height: 1; }
 .op-total-label { display: block; font-size: .7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
@@ -112,13 +115,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-del:active { color: var(--danger); }
 
 /* ── CERRAR TURNO ────────────────────────────────────────────────────────────── */
-.cerrar-wrap { padding: 1rem; padding-bottom: 2rem; }
+.cerrar-wrap { padding: 1rem; padding-bottom: 2rem; display: flex; flex-direction: column; gap: .75rem; }
+.btn-reporte {
+  width: 100%; padding: 1rem; border: none;
+  background: #0f766e; color: white; border-radius: 12px;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+}
+.btn-reporte:active { filter: brightness(.9); }
 .btn-cerrar {
   width: 100%; padding: 1rem; border: 2px solid var(--danger);
   background: white; color: var(--danger); border-radius: 12px;
   font-size: 1rem; font-weight: 700; cursor: pointer;
 }
 .btn-cerrar:active { background: #fff5f5; }
+.reporte-pre {
+  background: #f8fafc; border-radius: 10px; padding: 1rem;
+  font-family: 'Courier New', monospace; font-size: .8rem;
+  line-height: 1.6; white-space: pre-wrap; color: var(--text);
+  border: 1px solid var(--border);
+}
 
 /* ── MODALES ────────────────────────────────────────────────────────────────── */
 .modal-overlay {

@@ -5,17 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1e293b">
-  <title>Producción Clavadora</title>
+  <title>Custom Crates & Pallets</title>
   <link rel="stylesheet" href="op.css">
 </head>
 <body>
 
-  <!-- PASO 1: SELECCIONAR TURNO -->
+  <!-- PANTALLA INICIO -->
   <div id="pantallaInicio" class="pantalla activa">
     <div class="inicio-wrap">
       <div class="logo-area">
-        <div class="logo-icon">🔨</div>
-        <h1>Clavadora</h1>
+        <img src="logo.png" alt="Custom Crates & Pallets" class="logo-img" onerror="this.style.display='none'">
+        <h1>Custom Crates & Pallets</h1>
+        <p class="empresa-sub">Control de Producción</p>
         <p id="fechaHoy" class="fecha-hoy"></p>
       </div>
       <p class="instruccion">Selecciona tu turno para comenzar</p>
@@ -33,12 +34,15 @@
     </div>
   </div>
 
-  <!-- PASO 2: PANTALLA PRINCIPAL OPERADOR -->
+  <!-- PANTALLA OPERADOR -->
   <div id="pantallaOp" class="pantalla">
     <header class="op-header">
-      <div>
-        <div class="op-turno" id="opTurnoLabel"></div>
-        <div class="op-fecha" id="opFechaLabel"></div>
+      <div class="op-header-left">
+        <img src="logo.png" alt="" class="logo-header" onerror="this.style.display='none'">
+        <div>
+          <div class="op-turno" id="opTurnoLabel"></div>
+          <div class="op-fecha" id="opFechaLabel"></div>
+        </div>
       </div>
       <div class="op-total-wrap">
         <span class="op-total-num" id="opTotalNum">0</span>
@@ -46,7 +50,6 @@
       </div>
     </header>
 
-    <!-- Botones de acción principales -->
     <div class="acciones">
       <button class="btn-accion btn-prod" onclick="abrirModalProd()">
         <span class="accion-icon">➕</span>
@@ -58,7 +61,6 @@
       </button>
     </div>
 
-    <!-- Resumen del turno -->
     <div class="resumen-section">
       <div class="resumen-tabs">
         <button class="res-tab activa" onclick="mostrarTab('tabProd', this)">Producción</button>
@@ -82,6 +84,7 @@
     </div>
 
     <div class="cerrar-wrap">
+      <button class="btn-reporte" onclick="compartirReporte()">📤 Enviar Reporte del Turno</button>
       <button class="btn-cerrar" onclick="cerrarTurno()">Cerrar Turno</button>
     </div>
   </div>
@@ -118,12 +121,9 @@
   <div id="modalMuerto" class="modal-overlay hidden">
     <div class="modal">
       <div class="modal-header">
-        <h2>Tiempo Muerto</h2>
+        <h2>⏸ Tiempo Muerto</h2>
         <button class="btn-close" onclick="cerrarModal('modalMuerto')">✕</button>
       </div>
-
-      <label class="field-label">Hora en que ocurrió</label>
-      <select id="mHora" class="field-select"></select>
 
       <label class="field-label">Motivo</label>
       <div class="motivos-grid">
@@ -134,12 +134,27 @@
         <button class="btn-motivo" onclick="selMotivo(this)">Descanso</button>
         <button class="btn-motivo" onclick="selMotivo(this)">Otro</button>
       </div>
-      <input type="text" id="mMotivoCustom" class="field-input hidden" placeholder="Describe el motivo...">
+      <div id="otroWrap" class="hidden">
+        <label class="field-label" style="margin-top:.25rem">¿Cuál fue el motivo?</label>
+        <input type="text" id="mMotivoCustom" class="field-input" placeholder="Describe el motivo...">
+      </div>
 
-      <label class="field-label">Duración (minutos)</label>
+      <label class="field-label">Total de minutos parado</label>
       <input type="number" id="mMinutos" class="field-input field-big" inputmode="numeric" placeholder="0" min="1">
 
       <button class="btn-guardar btn-guardar-muerto" onclick="guardarMuerto()">Guardar</button>
+    </div>
+  </div>
+
+  <!-- MODAL: REPORTE -->
+  <div id="modalReporte" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>📋 Reporte del Turno</h2>
+        <button class="btn-close" onclick="cerrarModal('modalReporte')">✕</button>
+      </div>
+      <pre id="reporteTexto" class="reporte-pre"></pre>
+      <button class="btn-guardar" onclick="enviarReporte()">📤 Compartir (WhatsApp / Email)</button>
     </div>
   </div>
 

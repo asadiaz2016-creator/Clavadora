@@ -16,15 +16,15 @@ const HORAS = [
 // ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   const hoy = new Date();
-  document.getElementById('fechaHoy').textContent = hoy.toLocaleDateString('es-MX', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('fechaHoy').textContent = hoy.toLocaleDateString('es-MX', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
 
   modelos = await api('GET', '/api/modelos');
 
-  // Restaurar turno desde localStorage
   const saved = localStorage.getItem('turnoActivo');
   if (saved) {
     turnoActivo = JSON.parse(saved);
-    // Verificar que siga abierto en el servidor
     const activo = await api('GET', `/api/turnos/activo/${turnoActivo.turno}`);
     if (activo && activo.id === turnoActivo.id) {
       mostrarPantallaOp();
@@ -68,7 +68,7 @@ function llenarHoras(selectId) {
   });
 }
 
-// ── INICIO: SELECCIONAR TURNO ─────────────────────────────────────────────────
+// ── INICIO ────────────────────────────────────────────────────────────────────
 async function seleccionarTurno(turno) {
   const errEl = document.getElementById('errorInicio');
   errEl.classList.add('hidden');
@@ -106,7 +106,6 @@ async function cargarDatos() {
   actualizarTotal();
 }
 
-// ── TOTAL ─────────────────────────────────────────────────────────────────────
 function actualizarTotal() {
   const total = prodRows.reduce((s, r) => s + r.cantidad, 0);
   document.getElementById('opTotalNum').textContent = total.toLocaleString();
@@ -120,7 +119,6 @@ function renderProd() {
     return;
   }
   el.innerHTML = '';
-  // Agrupar por hora + modelo para mostrar totales
   prodRows.forEach(r => {
     const div = document.createElement('div');
     div.className = 'registro-item';
@@ -132,8 +130,7 @@ function renderProd() {
       <div class="reg-right">
         <span class="reg-cantidad">${r.cantidad.toLocaleString()}</span>
         <button class="btn-del" onclick="eliminarProd(${r.id})">🗑</button>
-      </div>
-    `;
+      </div>`;
     el.appendChild(div);
   });
 }
@@ -157,13 +154,11 @@ function renderMuertos() {
     div.innerHTML = `
       <div class="reg-info">
         <span class="reg-motivo">${r.motivo}</span>
-        <span class="reg-hora">${r.hora}</span>
       </div>
       <div class="reg-right">
         <span class="reg-minutos">${r.minutos} min</span>
         <button class="btn-del" onclick="eliminarMuerto(${r.id})">🗑</button>
-      </div>
-    `;
+      </div>`;
     el.appendChild(div);
   });
 }
@@ -223,7 +218,7 @@ async function agregarModelo() {
 }
 
 async function guardarProd() {
-  if (!modeloSel) return alert('Selecciona un modelo');
+  if (!modeloSel) return alert('Selecciona un modelo de tarima');
   const cantidad = parseInt(document.getElementById('pCantidad').value);
   if (!cantidad || cantidad < 1) return alert('Ingresa la cantidad');
   const hora = document.getElementById('pHora').value;
@@ -243,9 +238,9 @@ async function eliminarProd(id) {
 // ── MODAL TIEMPO MUERTO ───────────────────────────────────────────────────────
 function abrirModalMuerto() {
   motivoSel = null;
-  llenarHoras('mHora');
   document.getElementById('mMinutos').value = '';
-  document.getElementById('mMotivoCustom').classList.add('hidden');
+  document.getElementById('mMotivoCustom').value = '';
+  document.getElementById('otroWrap').classList.add('hidden');
   document.querySelectorAll('.btn-motivo').forEach(b => b.classList.remove('seleccionado'));
   document.getElementById('modalMuerto').classList.remove('hidden');
 }
@@ -255,20 +250,23 @@ function selMotivo(btn) {
   btn.classList.add('seleccionado');
   motivoSel = btn.textContent;
   if (motivoSel === 'Otro') {
-    document.getElementById('mMotivoCustom').classList.remove('hidden');
-    document.getElementById('mMotivoCustom').focus();
+    document.getElementById('otroWrap').classList.remove('hidden');
+    setTimeout(() => document.getElementById('mMotivoCustom').focus(), 100);
   } else {
-    document.getElementById('mMotivoCustom').classList.add('hidden');
+    document.getElementById('otroWrap').classList.add('hidden');
   }
 }
 
 async function guardarMuerto() {
   let motivo = motivoSel;
-  if (motivo === 'Otro') motivo = document.getElementById('mMotivoCustom').value.trim();
-  if (!motivo) return alert('Selecciona o escribe el motivo');
+  if (!motivo) return alert('Selecciona el motivo');
+  if (motivo === 'Otro') {
+    motivo = document.getElementById('mMotivoCustom').value.trim();
+    if (!motivo) return alert('Escribe el motivo del tiempo muerto');
+  }
   const minutos = parseInt(document.getElementById('mMinutos').value);
   if (!minutos || minutos < 1) return alert('Ingresa los minutos');
-  const hora = document.getElementById('mHora').value;
+  const hora = horaActual();
   try {
     await api('POST', '/api/tiempos', { turno_id: turnoActivo.id, motivo, minutos, hora });
     cerrarModal('modalMuerto');
@@ -281,6 +279,68 @@ async function eliminarMuerto(id) {
   if (!confirm('¿Eliminar este registro?')) return;
   await api('DELETE', `/api/tiempos/${id}`);
   await cargarDatos();
+}
+
+// ── REPORTE ───────────────────────────────────────────────────────────────────
+function compartirReporte() {
+  const [y,m,d] = turnoActivo.fecha.split('-');
+  const fecha = `${d}/${m}/${y}`;
+
+  // Totales por modelo
+  const porModelo = {};
+  prodRows.forEach(r => {
+    porModelo[r.modelo_nombre] = (porModelo[r.modelo_nombre] || 0) + r.cantidad;
+  });
+  const totalProd = prodRows.reduce((s, r) => s + r.cantidad, 0);
+
+  // Totales tiempo muerto
+  const porMotivo = {};
+  muertosRows.forEach(r => {
+    porMotivo[r.motivo] = (porMotivo[r.motivo] || 0) + r.minutos;
+  });
+  const totalMin = muertosRows.reduce((s, r) => s + r.minutos, 0);
+
+  let txt = `CUSTOM CRATES & PALLETS, INC.\n`;
+  txt += `Reporte Turno ${turnoActivo.turno} — ${fecha}\n`;
+  txt += `${'─'.repeat(32)}\n\n`;
+
+  txt += `📦 PRODUCCIÓN\n`;
+  if (Object.keys(porModelo).length) {
+    Object.entries(porModelo).forEach(([modelo, cant]) => {
+      txt += `  ${modelo}: ${cant.toLocaleString()} pzs\n`;
+    });
+    txt += `  ──────────────────\n`;
+    txt += `  TOTAL: ${totalProd.toLocaleString()} piezas\n`;
+  } else {
+    txt += `  Sin producción registrada\n`;
+  }
+
+  txt += `\n⏸ TIEMPOS MUERTOS\n`;
+  if (Object.keys(porMotivo).length) {
+    Object.entries(porMotivo).forEach(([motivo, min]) => {
+      txt += `  ${motivo}: ${min} min\n`;
+    });
+    txt += `  ──────────────────\n`;
+    txt += `  TOTAL: ${totalMin} minutos\n`;
+  } else {
+    txt += `  Sin tiempos muertos\n`;
+  }
+
+  document.getElementById('reporteTexto').textContent = txt;
+  document.getElementById('modalReporte').classList.remove('hidden');
+}
+
+async function enviarReporte() {
+  const texto = document.getElementById('reporteTexto').textContent;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Reporte Clavadora', text: texto });
+    } catch (e) { /* cancelado */ }
+  } else {
+    // Fallback: copiar al portapapeles
+    await navigator.clipboard.writeText(texto);
+    alert('Reporte copiado al portapapeles. Pégalo en WhatsApp o Email.');
+  }
 }
 
 // ── CERRAR TURNO ─────────────────────────────────────────────────────────────
@@ -297,5 +357,4 @@ async function cerrarTurno() {
   } catch (e) { alert(e.message); }
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
 function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
