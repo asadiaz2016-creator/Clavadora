@@ -1,6 +1,8 @@
 const express = require('express');
 const Database = require('better-sqlite3');
+const ExcelJS = require('exceljs');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = 3000;
@@ -172,5 +174,253 @@ app.get('/api/reporte/turno/:id', (req, res) => {
 });
 
 app.get('/manager', (req, res) => res.sendFile(path.join(__dirname, 'public', 'manager.html')));
+
+// ── REPORTE EXCEL ─────────────────────────────────────────────────────────────
+app.get('/api/reporte/excel/:turnoId', async (req, res) => {
+  const turnoId = req.params.turnoId;
+
+  const turno = db.prepare('SELECT * FROM turnos WHERE id=?').get(turnoId);
+  if (!turno) return res.status(404).json({ error: 'Turno no encontrado' });
+
+  const prod = db.prepare(`
+    SELECT p.hora, m.nombre as modelo, p.cantidad
+    FROM produccion p JOIN modelos m ON p.modelo_id=m.id
+    WHERE p.turno_id=? ORDER BY p.hora, m.nombre
+  `).all(turnoId);
+
+  const tiempos = db.prepare(
+    'SELECT motivo, minutos, hora FROM tiempos_muertos WHERE turno_id=? ORDER BY hora'
+  ).all(turnoId);
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Custom Crates & Pallets';
+  const ws = wb.addWorksheet('Reporte de Turno', { pageSetup: { fitToPage: true } });
+
+  // Colores corporativos
+  const ROJO    = 'FFB91C1C';
+  const ROJO_LT = 'FFFEE2E2';
+  const GRIS    = 'FF1E293B';
+  const GRIS_LT = 'FFF1F5F9';
+  const NARANJA = 'FFD97706';
+  const NAR_LT  = 'FFFEF3C7';
+  const BLANCO  = 'FFFFFFFF';
+  const VERDE   = 'FF065F46';
+  const VER_LT  = 'FFD1FAE5';
+
+  const bold  = (sz=11) => ({ bold:true, size:sz, color:{argb:BLANCO} });
+  const boldD = (sz=11) => ({ bold:true, size:sz, color:{argb:GRIS} });
+
+  ws.columns = [
+    {width:18},{width:22},{width:14},{width:14},{width:14},{width:14}
+  ];
+
+  // ── LOGO ──────────────────────────────────────────────────────────────────
+  const logoPath = path.join(__dirname, 'public', 'CCP.png');
+  if (fs.existsSync(logoPath)) {
+    const logoId = wb.addImage({ filename: logoPath, extension: 'png' });
+    ws.addImage(logoId, { tl:{col:0,row:0}, ext:{width:110,height:110} });
+  }
+
+  // ── ENCABEZADO ────────────────────────────────────────────────────────────
+  ws.mergeCells('B1:F1');
+  const r1 = ws.getCell('B1');
+  r1.value = 'CUSTOM CRATES & PALLETS, INC.';
+  r1.font = { bold:true, size:18, color:{argb:BLANCO} };
+  r1.fill = { type:'pattern', pattern:'solid', fgColor:{argb:ROJO} };
+  r1.alignment = { vertical:'middle', horizontal:'center' };
+  ws.getRow(1).height = 38;
+
+  ws.mergeCells('B2:F2');
+  const r2 = ws.getCell('B2');
+  r2.value = 'Reporte de Producción';
+  r2.font = { bold:true, size:13, color:{argb:BLANCO} };
+  r2.fill = { type:'pattern', pattern:'solid', fgColor:{argb:GRIS} };
+  r2.alignment = { vertical:'middle', horizontal:'center' };
+  ws.getRow(2).height = 26;
+
+  ws.mergeCells('A3:C3');
+  ws.getCell('A3').value = `Turno: ${turno.turno}`;
+  ws.getCell('A3').font = boldD(12);
+  ws.getCell('A3').fill = { type:'pattern', pattern:'solid', fgColor:{argb:GRIS_LT} };
+
+  ws.mergeCells('D3:F3');
+  const [y,m,d2] = turno.fecha.split('-');
+  ws.getCell('D3').value = `Fecha: ${d2}/${m}/${y}`;
+  ws.getCell('D3').font = boldD(12);
+  ws.getCell('D3').fill = { type:'pattern', pattern:'solid', fgColor:{argb:GRIS_LT} };
+  ws.getRow(3).height = 22;
+
+  ws.getRow(4).height = 8;
+
+  // ── SECCIÓN PRODUCCIÓN ────────────────────────────────────────────────────
+  ws.mergeCells('A5:F5');
+  const hProd = ws.getCell('A5');
+  hProd.value = '📦  PRODUCCIÓN POR HORA';
+  hProd.font = bold(13);
+  hProd.fill = { type:'pattern', pattern:'solid', fgColor:{argb:ROJO} };
+  hProd.alignment = { vertical:'middle', horizontal:'left', indent:1 };
+  ws.getRow(5).height = 24;
+
+  const prodHeader = ws.addRow(['Hora','Modelo','Cantidad']);
+  prodHeader.eachCell(cell => {
+    cell.font = { bold:true, size:11, color:{argb:BLANCO} };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:GRIS} };
+    cell.alignment = { horizontal:'center', vertical:'middle' };
+    cell.border = { bottom:{style:'thin', color:{argb:ROJO}} };
+  });
+  prodHeader.height = 20;
+
+  let totalProd = 0;
+  const porModelo = {};
+  prod.forEach((r, i) => {
+    const row = ws.addRow([r.hora, r.modelo, r.cantidad]);
+    const fill = i % 2 === 0 ? BLANCO : GRIS_LT;
+    row.eachCell(cell => {
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:fill} };
+      cell.alignment = { horizontal:'center', vertical:'middle' };
+      cell.border = { bottom:{style:'hair', color:{argb:'FFE2E8F0'}} };
+    });
+    row.getCell(3).numFmt = '#,##0';
+    totalProd += r.cantidad;
+    porModelo[r.modelo] = (porModelo[r.modelo] || 0) + r.cantidad;
+  });
+
+  if (!prod.length) {
+    ws.addRow(['Sin producción registrada','','']).getCell(1).font = {italic:true, color:{argb:'FF94A3B8'}};
+  }
+
+  // Total producción
+  const tProdRow = ws.addRow(['','TOTAL PRODUCCIÓN', totalProd]);
+  tProdRow.eachCell(cell => {
+    cell.font = { bold:true, size:11, color:{argb:BLANCO} };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:ROJO} };
+    cell.alignment = { horizontal:'center', vertical:'middle' };
+  });
+  tProdRow.getCell(3).numFmt = '#,##0';
+  tProdRow.height = 20;
+
+  // Resumen por modelo
+  ws.addRow([]);
+  const modHeader = ws.addRow(['Resumen por Modelo','','Cantidad','','% del Total']);
+  modHeader.eachCell((cell, col) => {
+    if ([1,3,5].includes(col)) {
+      cell.font = { bold:true, size:10, color:{argb:GRIS} };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:ROJO_LT} };
+      cell.alignment = { horizontal:'center' };
+    }
+  });
+
+  Object.entries(porModelo).sort((a,b)=>b[1]-a[1]).forEach(([ modelo, cant ], i) => {
+    const pct = totalProd > 0 ? ((cant/totalProd)*100).toFixed(1)+'%' : '0%';
+    const row = ws.addRow([modelo,'',cant,'',pct]);
+    const fill = i % 2 === 0 ? BLANCO : ROJO_LT;
+    [1,3,5].forEach(c => {
+      const cell = row.getCell(c);
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:fill} };
+      cell.alignment = { horizontal:'center' };
+    });
+    row.getCell(3).numFmt = '#,##0';
+  });
+
+  ws.addRow([]).height = 8;
+
+  // ── SECCIÓN TIEMPOS MUERTOS ───────────────────────────────────────────────
+  ws.mergeCells(`A${ws.rowCount+1}:F${ws.rowCount+1}`);
+  const hMuerto = ws.getCell(`A${ws.rowCount}`);
+  hMuerto.value = '⏸  TIEMPOS MUERTOS';
+  hMuerto.font = bold(13);
+  hMuerto.fill = { type:'pattern', pattern:'solid', fgColor:{argb:NARANJA} };
+  hMuerto.alignment = { vertical:'middle', horizontal:'left', indent:1 };
+  ws.getRow(ws.rowCount).height = 24;
+
+  const tmHeader = ws.addRow(['Hora','Motivo','Minutos']);
+  tmHeader.eachCell(cell => {
+    cell.font = { bold:true, size:11, color:{argb:BLANCO} };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:GRIS} };
+    cell.alignment = { horizontal:'center', vertical:'middle' };
+    cell.border = { bottom:{style:'thin', color:{argb:NARANJA}} };
+  });
+  tmHeader.height = 20;
+
+  let totalMin = 0;
+  tiempos.forEach((r, i) => {
+    const row = ws.addRow([r.hora, r.motivo, r.minutos]);
+    const fill = i % 2 === 0 ? BLANCO : NAR_LT;
+    row.eachCell(cell => {
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:fill} };
+      cell.alignment = { horizontal:'center', vertical:'middle' };
+    });
+    totalMin += r.minutos;
+  });
+
+  if (!tiempos.length) {
+    const noTM = ws.addRow(['Sin tiempos muertos ✅','','']);
+    noTM.getCell(1).font = { italic:true, color:{argb:'FF065F46'} };
+    noTM.getCell(1).fill = { type:'pattern', pattern:'solid', fgColor:{argb:VER_LT} };
+  }
+
+  const tMinRow = ws.addRow(['','TOTAL TIEMPO MUERTO', totalMin + ' min']);
+  tMinRow.eachCell(cell => {
+    cell.font = { bold:true, size:11, color:{argb:BLANCO} };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:NARANJA} };
+    cell.alignment = { horizontal:'center', vertical:'middle' };
+  });
+  tMinRow.height = 20;
+
+  ws.addRow([]).height = 8;
+
+  // ── RESUMEN FINAL ─────────────────────────────────────────────────────────
+  ws.mergeCells(`A${ws.rowCount+1}:F${ws.rowCount+1}`);
+  const hRes = ws.getCell(`A${ws.rowCount}`);
+  hRes.value = '⚡  RESUMEN EJECUTIVO';
+  hRes.font = bold(13);
+  hRes.fill = { type:'pattern', pattern:'solid', fgColor:{argb:VERDE} };
+  hRes.alignment = { vertical:'middle', horizontal:'left', indent:1 };
+  ws.getRow(ws.rowCount).height = 24;
+
+  const promHora = prod.length > 0
+    ? Math.round(totalProd / [...new Set(prod.map(r => r.hora))].length)
+    : 0;
+  const eficiencia = totalMin > 0 && prod.length > 0
+    ? Math.max(0, Math.round(100 - (totalMin / ([...new Set(prod.map(r=>r.hora))].length * 60)) * 100))
+    : 100;
+
+  const resData = [
+    ['Total Piezas Producidas', totalProd.toLocaleString() + ' pzs'],
+    ['Promedio por Hora',        promHora.toLocaleString() + ' pzs/hr'],
+    ['Total Tiempo Muerto',      totalMin + ' minutos'],
+    ['Eficiencia del Turno',     eficiencia + '%'],
+  ];
+
+  resData.forEach(([label, val], i) => {
+    ws.mergeCells(`A${ws.rowCount+1}:D${ws.rowCount+1}`);
+    ws.mergeCells(`E${ws.rowCount}:F${ws.rowCount}`);
+    const row = ws.getRow(ws.rowCount);
+    row.getCell(1).value = label;
+    row.getCell(5).value = val;
+    const fill = i % 2 === 0 ? BLANCO : VER_LT;
+    [1,5].forEach(c => {
+      row.getCell(c).fill = { type:'pattern', pattern:'solid', fgColor:{argb:fill} };
+      row.getCell(c).font = c===5 ? {bold:true, size:12, color:{argb:VERDE}} : {size:11};
+      row.getCell(c).alignment = { vertical:'middle', horizontal: c===5?'center':'left', indent: c===1?1:0 };
+    });
+    row.height = 22;
+  });
+
+  // ── PIE DE PÁGINA ─────────────────────────────────────────────────────────
+  ws.addRow([]).height = 8;
+  ws.mergeCells(`A${ws.rowCount+1}:F${ws.rowCount+1}`);
+  const pie = ws.getCell(`A${ws.rowCount}`);
+  pie.value = `Generado por Sistema de Producción Clavadora · ${new Date().toLocaleString('es-MX')}`;
+  pie.font = { italic:true, size:9, color:{argb:'FF94A3B8'} };
+  pie.alignment = { horizontal:'center' };
+
+  const fecha = turno.fecha.replace(/-/g,'');
+  const filename = `Reporte_${turno.turno}_${fecha}.xlsx`;
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  await wb.xlsx.write(res);
+  res.end();
+});
 
 app.listen(PORT, '0.0.0.0', () => console.log(`http://localhost:${PORT}`));

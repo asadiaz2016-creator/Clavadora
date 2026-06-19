@@ -372,6 +372,24 @@ function graficarLinea(dataPorHora, titulo, unidad) {
 }
 
 // ── REPORTE ───────────────────────────────────────────────────────────────────
+async function descargarExcel() {
+  if (!turnoActivo) return alert('No hay turno activo');
+  try {
+    const res = await fetch(`/api/reporte/excel/${turnoActivo.id}`);
+    if (!res.ok) throw new Error('Error generando el reporte');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const [y,m,d] = turnoActivo.fecha.split('-');
+    a.download = `Reporte_${turnoActivo.turno}_${d}${m}${y}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    // Mostrar instrucciones para WhatsApp
+    document.getElementById('modalWhatsapp').classList.remove('hidden');
+  } catch (e) { alert(e.message); }
+}
+
 function compartirReporte() {
   const [y,m,d] = turnoActivo.fecha.split('-');
   const fecha = `${d}/${m}/${y}`;

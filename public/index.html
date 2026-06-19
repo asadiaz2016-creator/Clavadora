@@ -92,7 +92,7 @@
     </div>
 
     <div class="cerrar-wrap">
-      <button class="btn-reporte" onclick="compartirReporte()">📤 Enviar Reporte del Turno</button>
+      <button class="btn-reporte" onclick="descargarExcel()">📊 Generar Reporte Excel</button>
       <button class="btn-cerrar" onclick="cerrarTurno()">Cerrar Turno</button>
     </div>
   </div>
@@ -163,6 +163,24 @@
       </div>
       <pre id="reporteTexto" class="reporte-pre"></pre>
       <button class="btn-guardar" onclick="enviarReporte()">📤 Compartir (WhatsApp / Email)</button>
+    </div>
+  </div>
+
+  <!-- MODAL: INSTRUCCIONES WHATSAPP -->
+  <div id="modalWhatsapp" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>📊 Reporte Generado</h2>
+        <button class="btn-close" onclick="cerrarModal('modalWhatsapp')">✕</button>
+      </div>
+      <div class="wa-steps">
+        <p class="wa-intro">El archivo Excel se descargó en tu celular. Para enviarlo por WhatsApp:</p>
+        <div class="wa-step"><span class="wa-num">1</span><span>Abre <strong>WhatsApp</strong> y entra al chat del Manager</span></div>
+        <div class="wa-step"><span class="wa-num">2</span><span>Toca el ícono de <strong>📎 Adjuntar</strong></span></div>
+        <div class="wa-step"><span class="wa-num">3</span><span>Selecciona <strong>Documento</strong> y busca el archivo en <strong>Descargas</strong></span></div>
+        <div class="wa-step"><span class="wa-num">4</span><span>Toca <strong>Enviar</strong> ✅</span></div>
+      </div>
+      <button class="btn-guardar" onclick="cerrarModal('modalWhatsapp')">Entendido</button>
     </div>
   </div>
 
