@@ -2,9 +2,21 @@ const express = require('express');
 const Database = require('better-sqlite3');
 const ExcelJS = require('exceljs');
 const crypto = require('crypto');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+
+function fetchBuffer(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, res => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+      res.on('error', reject);
+    }).on('error', reject);
+  });
+}
 
 // Carpeta temporal para reportes
 const TEMP_DIR = path.join(os.tmpdir(), 'clavadora-reportes');
@@ -346,7 +358,7 @@ app.post('/api/reporte/excel/:turnoId', async (req, res) => {
   hMuerto.alignment = { vertical:'middle', horizontal:'left', indent:1 };
   ws.getRow(ws.rowCount).height = 24;
 
-  const tmHeader = ws.addRow(['Hora','Motivo','Minutos']);
+  const tmHeader = ws.addRow(['Motivo','Minutos']);
   tmHeader.eachCell(cell => {
     cell.font = { bold:true, size:11, color:{argb:BLANCO} };
     cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:GRIS} };
@@ -357,7 +369,7 @@ app.post('/api/reporte/excel/:turnoId', async (req, res) => {
 
   let totalMin = 0;
   tiempos.forEach((r, i) => {
-    const row = ws.addRow([r.hora, r.motivo, r.minutos]);
+    const row = ws.addRow([r.motivo, r.minutos]);
     const fill = i % 2 === 0 ? BLANCO : NAR_LT;
     row.eachCell(cell => {
       cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:fill} };
@@ -486,9 +498,8 @@ app.post('/api/reporte/excel/:turnoId', async (req, res) => {
     };
 
     const chartUrl = `https://quickchart.io/chart?w=700&h=320&bkg=white&c=${encodeURIComponent(JSON.stringify(chartCfg))}`;
-    const imgRes = await fetch(chartUrl);
-    if (imgRes.ok) {
-      const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+    const imgBuf = await fetchBuffer(chartUrl);
+    if (imgBuf.length > 1000) {
       const imgId = wb.addImage({ buffer: imgBuf, extension: 'png' });
       const startRow = ws.rowCount;
       // Reservar espacio para la imagen (aprox 18 filas)
