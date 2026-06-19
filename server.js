@@ -7,14 +7,22 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-function fetchBuffer(url) {
+function fetchChartPNG(chartCfg) {
   return new Promise((resolve, reject) => {
-    https.get(url, res => {
+    const body = JSON.stringify({ width:700, height:320, backgroundColor:'white', chart: chartCfg });
+    const req = https.request({
+      hostname: 'quickchart.io',
+      path: '/chart',
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Content-Length': Buffer.byteLength(body) }
+    }, res => {
       const chunks = [];
       res.on('data', c => chunks.push(c));
       res.on('end', () => resolve(Buffer.concat(chunks)));
-      res.on('error', reject);
-    }).on('error', reject);
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
   });
 }
 
@@ -497,16 +505,15 @@ app.post('/api/reporte/excel/:turnoId', async (req, res) => {
       }
     };
 
-    const chartUrl = `https://quickchart.io/chart?w=700&h=320&bkg=white&c=${encodeURIComponent(JSON.stringify(chartCfg))}`;
-    const imgBuf = await fetchBuffer(chartUrl);
+    const imgBuf = await fetchChartPNG(chartCfg);
     if (imgBuf.length > 1000) {
       const imgId = wb.addImage({ buffer: imgBuf, extension: 'png' });
-      const startRow = ws.rowCount;
-      // Reservar espacio para la imagen (aprox 18 filas)
-      for (let i = 0; i < 18; i++) ws.addRow([]).height = 18;
+      const startRow = ws.rowCount; // 0-indexed start
+      const endRow   = startRow + 20;
+      for (let i = 0; i < 20; i++) ws.addRow([]).height = 16;
       ws.addImage(imgId, {
         tl: { col: 0, row: startRow },
-        ext: { width: 700, height: 320 }
+        br: { col: 6, row: endRow }
       });
     }
   } catch (e) {
