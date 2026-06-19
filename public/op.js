@@ -399,9 +399,7 @@ async function descargarExcel() {
       `⏸ Tiempo muerto: *${totalMin} min*\n\n` +
       `📥 Descarga el reporte Excel:\n${url}`;
 
-    const waUrl = MANAGER_WA
-      ? `https://wa.me/${MANAGER_WA}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
 
     window.open(waUrl, '_blank');
   } catch (e) {
