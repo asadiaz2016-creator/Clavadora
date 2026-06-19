@@ -18,7 +18,15 @@ function fetchChartPNG(chartCfg) {
     }, res => {
       const chunks = [];
       res.on('data', c => chunks.push(c));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
+      res.on('end', () => {
+        const buf = Buffer.concat(chunks);
+        // Verificar que sea PNG real (magic bytes: 89 50 4E 47)
+        if (buf[0] === 0x89 && buf[1] === 0x50) {
+          resolve(buf);
+        } else {
+          reject(new Error('QuickChart error: ' + buf.toString().substring(0,200)));
+        }
+      });
     });
     req.on('error', reject);
     req.write(body);
@@ -462,45 +470,48 @@ app.post('/api/reporte/excel/:turnoId', async (req, res) => {
     const dataProd  = horas.map(h => porHora[h] || 0);
     const dataMuert = horas.map(h => muertosPorHora[h] || 0);
 
+    const maxP = Math.max(...dataProd, 1);
+    const maxM = Math.max(...dataMuert, 1);
+    const normProd  = dataProd.map(v => Math.round((v / maxP) * 100));
+    const normMuert = dataMuert.map(v => Math.round((v / maxM) * 100));
+
     const chartCfg = {
       type: 'line',
       data: {
         labels,
         datasets: [
           {
-            label: 'Producción (pzs)',
-            data: dataProd,
+            label: 'Producción (% del máximo)',
+            data: normProd,
             borderColor: '#B91C1C',
-            backgroundColor: 'rgba(185,28,28,0.08)',
+            backgroundColor: 'rgba(185,28,28,0.1)',
             borderWidth: 3,
             pointRadius: 5,
             pointBackgroundColor: '#B91C1C',
-            tension: 0.3,
-            fill: true,
-            yAxisID: 'y'
+            fill: false
           },
           {
-            label: 'Tiempo Muerto (min)',
-            data: dataMuert,
+            label: 'Tiempo Muerto (% del máximo)',
+            data: normMuert,
             borderColor: '#D97706',
-            backgroundColor: 'rgba(217,119,6,0.08)',
+            backgroundColor: 'rgba(217,119,6,0.1)',
             borderWidth: 3,
             pointRadius: 5,
             pointBackgroundColor: '#D97706',
-            tension: 0.3,
-            fill: true,
-            yAxisID: 'y2'
+            fill: false
           }
         ]
       },
       options: {
-        plugins: {
-          legend: { position: 'top' },
-          title: { display: true, text: `Turno ${turno.turno} — ${turno.fecha}`, font: { size: 14 } }
+        title: {
+          display: true,
+          text: `Turno ${turno.turno} — ${turno.fecha}  |  Max prod: ${maxP} pzs  |  Max t.muerto: ${maxM} min`,
+          fontSize: 13
         },
+        legend: { position: 'top' },
         scales: {
-          y:  { position: 'left',  title: { display:true, text:'Piezas producidas' }, grid: { color:'#e2e8f0' } },
-          y2: { position: 'right', title: { display:true, text:'Minutos muertos'   }, grid: { drawOnChartArea:false } }
+          yAxes: [{ ticks: { min: 0, max: 100, callback: function(v){ return v + '%'; } } }],
+          xAxes: [{ gridLines: { color: '#e2e8f0' } }]
         }
       }
     };
