@@ -77,7 +77,7 @@ function llenarHoras(selectId) {
     ['10:00-11:00','11:00-12:00'].forEach(h => sel.appendChild(makeOpt(h)));
     sel.appendChild(optGroup('⏸ Break 12:00-12:15'));
     sel.appendChild(optGroup('--- Después del break ---'));
-    ['12:15-13:00','13:00-14:00','14:00-14:30'].forEach(h => sel.appendChild(makeOpt(h)));
+    ['12:15-13:00','13:00-14:00','14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00'].forEach(h => sel.appendChild(makeOpt(h)));
   } else {
     sel.appendChild(optGroup('--- Antes del lonche ---'));
     ['14:30-15:00','15:00-16:00','16:00-17:00','17:00-18:00'].forEach(h => sel.appendChild(makeOpt(h)));
