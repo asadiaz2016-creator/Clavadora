@@ -420,6 +420,88 @@ app.post('/api/reporte/excel/:turnoId', async (req, res) => {
     row.height = 22;
   });
 
+  // ── GRÁFICA DE LÍNEAS ─────────────────────────────────────────────────────
+  ws.addRow([]).height = 8;
+  ws.mergeCells(`A${ws.rowCount+1}:F${ws.rowCount+1}`);
+  const hGraf = ws.getCell(`A${ws.rowCount}`);
+  hGraf.value = '📈  GRÁFICA: PRODUCCIÓN vs TIEMPO MUERTO';
+  hGraf.font = bold(13);
+  hGraf.fill = { type:'pattern', pattern:'solid', fgColor:{argb:GRIS} };
+  hGraf.alignment = { vertical:'middle', horizontal:'left', indent:1 };
+  ws.getRow(ws.rowCount).height = 24;
+
+  try {
+    // Preparar datos por hora
+    const porHora = {};
+    prod.forEach(r => { porHora[r.hora] = (porHora[r.hora] || 0) + r.cantidad; });
+    const muertosPorHora = {};
+    tiempos.forEach(r => { muertosPorHora[r.hora] = (muertosPorHora[r.hora] || 0) + r.minutos; });
+
+    const horas = [...new Set([...Object.keys(porHora), ...Object.keys(muertosPorHora)])].sort();
+    const labels = horas.map(h => h.substring(0,5));
+    const dataProd  = horas.map(h => porHora[h] || 0);
+    const dataMuert = horas.map(h => muertosPorHora[h] || 0);
+
+    const chartCfg = {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Producción (pzs)',
+            data: dataProd,
+            borderColor: '#B91C1C',
+            backgroundColor: 'rgba(185,28,28,0.08)',
+            borderWidth: 3,
+            pointRadius: 5,
+            pointBackgroundColor: '#B91C1C',
+            tension: 0.3,
+            fill: true,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Tiempo Muerto (min)',
+            data: dataMuert,
+            borderColor: '#D97706',
+            backgroundColor: 'rgba(217,119,6,0.08)',
+            borderWidth: 3,
+            pointRadius: 5,
+            pointBackgroundColor: '#D97706',
+            tension: 0.3,
+            fill: true,
+            yAxisID: 'y2'
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: `Turno ${turno.turno} — ${turno.fecha}`, font: { size: 14 } }
+        },
+        scales: {
+          y:  { position: 'left',  title: { display:true, text:'Piezas producidas' }, grid: { color:'#e2e8f0' } },
+          y2: { position: 'right', title: { display:true, text:'Minutos muertos'   }, grid: { drawOnChartArea:false } }
+        }
+      }
+    };
+
+    const chartUrl = `https://quickchart.io/chart?w=700&h=320&bkg=white&c=${encodeURIComponent(JSON.stringify(chartCfg))}`;
+    const imgRes = await fetch(chartUrl);
+    if (imgRes.ok) {
+      const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+      const imgId = wb.addImage({ buffer: imgBuf, extension: 'png' });
+      const startRow = ws.rowCount;
+      // Reservar espacio para la imagen (aprox 18 filas)
+      for (let i = 0; i < 18; i++) ws.addRow([]).height = 18;
+      ws.addImage(imgId, {
+        tl: { col: 0, row: startRow },
+        ext: { width: 700, height: 320 }
+      });
+    }
+  } catch (e) {
+    ws.addRow(['  (Gráfica no disponible)']).getCell(1).font = { italic:true, color:{argb:'FF94A3B8'} };
+  }
+
   // ── PIE DE PÁGINA ─────────────────────────────────────────────────────────
   ws.addRow([]).height = 8;
   ws.mergeCells(`A${ws.rowCount+1}:F${ws.rowCount+1}`);
