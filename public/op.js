@@ -5,12 +5,30 @@ let motivoSel = null;
 let prodRows = [];
 let muertosRows = [];
 
-const HORAS = [
-  '06:00-07:00','07:00-08:00','08:00-09:00','09:00-10:00',
-  '10:00-11:00','11:00-12:00','12:00-13:00','13:00-14:00',
-  '14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00',
-  '18:00-19:00','19:00-20:00','20:00-21:00','21:00-22:00',
-  '22:00-23:00','23:00-00:00'
+const HORAS_MATUTINO = [
+  '06:00-07:00','07:00-08:00','08:00-09:00',
+  '09:00-09:30',
+  // 09:30-10:00 Lonche
+  '10:00-11:00','11:00-12:00',
+  '12:00-12:00', // placeholder para break
+  '12:15-13:00','13:00-14:00','14:00-14:30'
+];
+
+const HORAS_VESPERTINO = [
+  '14:30-15:00','15:00-16:00','16:00-17:00','17:00-18:00',
+  // 18:00-18:30 Lonche
+  '18:30-19:00','19:00-20:00','20:00-21:00','21:00-22:00','22:00-22:30'
+];
+
+const HORAS_MATUTINO_CLEAN = [
+  '06:00-07:00','07:00-08:00','08:00-09:00','09:00-09:30',
+  '10:00-11:00','11:00-12:00',
+  '12:15-13:00','13:00-14:00','14:00-14:30'
+];
+
+const HORAS_VESPERTINO_CLEAN = [
+  '14:30-15:00','15:00-16:00','16:00-17:00','17:00-18:00',
+  '18:30-19:00','19:00-20:00','20:00-21:00','21:00-22:00','22:00-22:30'
 ];
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -46,7 +64,7 @@ async function api(method, path, body) {
 }
 
 function horaActual() {
-  return '06:00-07:00';
+  return turnoActivo?.turno === 'Vespertino' ? '14:30-15:00' : '06:00-07:00';
 }
 
 function fechaHoy() {
@@ -56,13 +74,38 @@ function fechaHoy() {
 function llenarHoras(selectId) {
   const sel = document.getElementById(selectId);
   sel.innerHTML = '';
-  const actual = horaActual();
-  HORAS.forEach(h => {
-    const opt = document.createElement('option');
-    opt.value = h; opt.textContent = h;
-    if (h === actual) opt.selected = true;
-    sel.appendChild(opt);
-  });
+  const esMat = turnoActivo?.turno === 'Matutino';
+  const horas = esMat ? HORAS_MATUTINO_CLEAN : HORAS_VESPERTINO_CLEAN;
+
+  // Separadores de descanso
+  if (esMat) {
+    sel.appendChild(optGroup('--- Antes del lonche ---'));
+    ['06:00-07:00','07:00-08:00','08:00-09:00','09:00-09:30'].forEach(h => sel.appendChild(makeOpt(h)));
+    sel.appendChild(optGroup('☕ Lonche 9:30-10:00'));
+    sel.appendChild(optGroup('--- Después del lonche ---'));
+    ['10:00-11:00','11:00-12:00'].forEach(h => sel.appendChild(makeOpt(h)));
+    sel.appendChild(optGroup('⏸ Break 12:00-12:15'));
+    sel.appendChild(optGroup('--- Después del break ---'));
+    ['12:15-13:00','13:00-14:00','14:00-14:30'].forEach(h => sel.appendChild(makeOpt(h)));
+  } else {
+    sel.appendChild(optGroup('--- Antes del lonche ---'));
+    ['14:30-15:00','15:00-16:00','16:00-17:00','17:00-18:00'].forEach(h => sel.appendChild(makeOpt(h)));
+    sel.appendChild(optGroup('☕ Lonche 18:00-18:30'));
+    sel.appendChild(optGroup('--- Después del lonche ---'));
+    ['18:30-19:00','19:00-20:00','20:00-21:00','21:00-22:00','22:00-22:30'].forEach(h => sel.appendChild(makeOpt(h)));
+  }
+}
+
+function makeOpt(h) {
+  const opt = document.createElement('option');
+  opt.value = h; opt.textContent = h;
+  return opt;
+}
+
+function optGroup(label) {
+  const og = document.createElement('optgroup');
+  og.label = label;
+  return og;
 }
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
