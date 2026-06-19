@@ -24,7 +24,7 @@ const HORAS_VESPERTINO = [
 const HORAS_MATUTINO_CLEAN = [
   '06:00-07:00','07:00-08:00','08:00-09:00','09:00-09:30',
   '10:00-11:00','11:00-12:00',
-  '12:15-13:00','13:00-14:00','14:00-14:30'
+  '12:15-13:00','13:00-14:00','14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00'
 ];
 
 const HORAS_VESPERTINO_CLEAN = [
@@ -322,39 +322,52 @@ async function eliminarMuerto(id) {
   await cargarDatos();
 }
 
-// ── GRÁFICA DE LÍNEAS ─────────────────────────────────────────────────────────
-function generarGrafica(prodPorHora, muertosPorHora) {
-  const FILAS = 8;
-  const horas = [...new Set([...Object.keys(prodPorHora), ...Object.keys(muertosPorHora)])].sort();
-  if (!horas.length) return '  Sin datos para graficar\n';
+// ── GRÁFICAS DE LÍNEAS ────────────────────────────────────────────────────────
+function graficarLinea(dataPorHora, titulo, unidad) {
+  const FILAS = 6;
+  const horas = Object.keys(dataPorHora).sort();
+  if (!horas.length) return `${titulo}: Sin datos\n`;
 
-  const maxProd = Math.max(...Object.values(prodPorHora), 1);
-  const maxMin  = Math.max(...Object.values(muertosPorHora), 1);
+  const vals = horas.map(h => dataPorHora[h] || 0);
+  const maxVal = Math.max(...vals, 1);
 
-  // Normalizar cada serie a 0..FILAS-1
-  const nP = {}, nM = {};
-  horas.forEach(h => {
-    nP[h] = prodPorHora[h]    ? Math.round((prodPorHora[h]    / maxProd) * (FILAS - 1)) : -1;
-    nM[h] = muertosPorHora[h] ? Math.round((muertosPorHora[h] / maxMin)  * (FILAS - 1)) : -1;
+  // Posición en filas (0=arriba/máximo, FILAS-1=abajo/cero)
+  const pos = vals.map(v =>
+    v === 0 ? FILAS - 1 : FILAS - 1 - Math.round((v / maxVal) * (FILAS - 1))
+  );
+
+  // Grid: columnas pares = puntos, columnas impares = conectores
+  const W = horas.length * 2 - 1;
+  const grid = Array.from({length: FILAS}, () => Array(W).fill(' '));
+
+  pos.forEach((row, i) => {
+    grid[row][i * 2] = '●';
+    if (i < pos.length - 1) {
+      const nRow = pos[i + 1];
+      const c = i * 2 + 1;
+      if (nRow === row) {
+        grid[row][c] = '─';
+      } else if (nRow < row) {
+        grid[row][c] = '╱';
+        for (let r = nRow + 1; r < row; r++) grid[r][c] = '│';
+      } else {
+        grid[row][c] = '╲';
+        for (let r = row + 1; r < nRow; r++) grid[r][c] = '│';
+      }
+    }
   });
 
-  let txt = '  ● Producción   ◆ T.Muerto\n';
-  for (let fila = FILAS - 1; fila >= 0; fila--) {
-    const pct = Math.round((fila / (FILAS - 1)) * 100);
-    txt += pct.toString().padStart(3) + '%│';
-    horas.forEach(h => {
-      const p = nP[h] === fila, m = nM[h] === fila;
-      if (p && m) txt += '✦ ';
-      else if (p)  txt += '● ';
-      else if (m)  txt += '◆ ';
-      else         txt += '· ';
-    });
-    txt += '\n';
-  }
-  txt += '    └' + '──'.repeat(horas.length) + '\n';
-  txt += '     ';
-  horas.forEach(h => { txt += h.substring(0, 2) + ' '; });
-  txt += '\n  (✦ coinciden ambas)\n';
+  const pad = String(maxVal.toLocaleString()).length;
+  let txt = `${titulo}\n`;
+  grid.forEach((row, i) => {
+    const label = i === 0 ? maxVal.toLocaleString().padStart(pad)
+                : i === FILAS - 1 ? '0'.padStart(pad)
+                : ' '.repeat(pad);
+    txt += label + '│' + row.join('') + '\n';
+  });
+  txt += ' '.repeat(pad) + '└' + '──'.repeat(horas.length) + '\n';
+  txt += ' '.repeat(pad + 1) + horas.map(h => h.substring(0, 2)).join(' ') + '\n';
+  txt += ' '.repeat(pad + 1) + `(hrs)  máx: ${maxVal.toLocaleString()} ${unidad}\n`;
   return txt;
 }
 
@@ -429,9 +442,13 @@ function compartirReporte() {
     txt += ` Sin producción registrada\n`;
   }
 
-  txt += `\n📈 GRÁFICA DEL TURNO\n`;
+  txt += `\n📦 GRÁFICA DE PRODUCCIÓN\n`;
   txt += `${SEP2}\n`;
-  txt += generarGrafica(porHora, muertosPorHora);
+  txt += graficarLinea(porHora, '', 'pzs/hr');
+
+  txt += `\n⏸ GRÁFICA TIEMPO MUERTO\n`;
+  txt += `${SEP2}\n`;
+  txt += graficarLinea(muertosPorHora, '', 'min');
 
   txt += `\n⏸ TIEMPOS MUERTOS\n`;
   txt += `${SEP2}\n`;
