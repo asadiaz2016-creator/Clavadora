@@ -40,17 +40,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   modelos = await api('GET', '/api/modelos');
 
-  const saved = localStorage.getItem('turnoActivo');
-  if (saved) {
-    turnoActivo = JSON.parse(saved);
-    const activo = await api('GET', `/api/turnos/activo/${turnoActivo.turno}`);
-    if (activo && activo.id === turnoActivo.id) {
-      mostrarPantallaOp();
-      return;
-    } else {
-      localStorage.removeItem('turnoActivo');
-    }
-  }
+  // Siempre mostrar pantalla de inicio primero
+  localStorage.removeItem('turnoActivo');
   document.getElementById('pantallaInicio').classList.add('activa');
 });
 
