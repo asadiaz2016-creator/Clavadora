@@ -46,11 +46,7 @@ async function api(method, path, body) {
 }
 
 function horaActual() {
-  const h = new Date().getHours();
-  const efectiva = h < 6 ? 6 : h;
-  const inicio = String(efectiva).padStart(2,'0') + ':00';
-  const fin = String((efectiva + 1) % 24).padStart(2,'0') + ':00';
-  return `${inicio}-${fin}`;
+  return '06:00-07:00';
 }
 
 function fechaHoy() {
