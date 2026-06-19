@@ -322,6 +322,42 @@ async function eliminarMuerto(id) {
   await cargarDatos();
 }
 
+// ── GRÁFICA DE LÍNEAS ─────────────────────────────────────────────────────────
+function generarGrafica(prodPorHora, muertosPorHora) {
+  const FILAS = 8;
+  const horas = [...new Set([...Object.keys(prodPorHora), ...Object.keys(muertosPorHora)])].sort();
+  if (!horas.length) return '  Sin datos para graficar\n';
+
+  const maxProd = Math.max(...Object.values(prodPorHora), 1);
+  const maxMin  = Math.max(...Object.values(muertosPorHora), 1);
+
+  // Normalizar cada serie a 0..FILAS-1
+  const nP = {}, nM = {};
+  horas.forEach(h => {
+    nP[h] = prodPorHora[h]    ? Math.round((prodPorHora[h]    / maxProd) * (FILAS - 1)) : -1;
+    nM[h] = muertosPorHora[h] ? Math.round((muertosPorHora[h] / maxMin)  * (FILAS - 1)) : -1;
+  });
+
+  let txt = '  ● Producción   ◆ T.Muerto\n';
+  for (let fila = FILAS - 1; fila >= 0; fila--) {
+    const pct = Math.round((fila / (FILAS - 1)) * 100);
+    txt += pct.toString().padStart(3) + '%│';
+    horas.forEach(h => {
+      const p = nP[h] === fila, m = nM[h] === fila;
+      if (p && m) txt += '✦ ';
+      else if (p)  txt += '● ';
+      else if (m)  txt += '◆ ';
+      else         txt += '· ';
+    });
+    txt += '\n';
+  }
+  txt += '    └' + '──'.repeat(horas.length) + '\n';
+  txt += '     ';
+  horas.forEach(h => { txt += h.substring(0, 2) + ' '; });
+  txt += '\n  (✦ coinciden ambas)\n';
+  return txt;
+}
+
 // ── REPORTE ───────────────────────────────────────────────────────────────────
 function compartirReporte() {
   const [y,m,d] = turnoActivo.fecha.split('-');
@@ -339,6 +375,12 @@ function compartirReporte() {
   const porHora = {};
   prodRows.forEach(r => {
     porHora[r.hora] = (porHora[r.hora] || 0) + r.cantidad;
+  });
+
+  // Tiempo muerto por hora
+  const muertosPorHora = {};
+  muertosRows.forEach(r => {
+    muertosPorHora[r.hora] = (muertosPorHora[r.hora] || 0) + r.minutos;
   });
 
   // Tiempos muertos por motivo
@@ -387,18 +429,9 @@ function compartirReporte() {
     txt += ` Sin producción registrada\n`;
   }
 
-  txt += `\n📊 PRODUCCIÓN POR HORA\n`;
+  txt += `\n📈 GRÁFICA DEL TURNO\n`;
   txt += `${SEP2}\n`;
-  if (Object.keys(porHora).length) {
-    Object.entries(porHora)
-      .sort((a,b) => a[0].localeCompare(b[0]))
-      .forEach(([hora, cant]) => {
-        const barra = '█'.repeat(Math.min(10, Math.round(cant / Math.max(...Object.values(porHora)) * 10)));
-        txt += ` ${hora}  ${barra} ${cant}\n`;
-      });
-  } else {
-    txt += ` Sin registros\n`;
-  }
+  txt += generarGrafica(porHora, muertosPorHora);
 
   txt += `\n⏸ TIEMPOS MUERTOS\n`;
   txt += `${SEP2}\n`;
