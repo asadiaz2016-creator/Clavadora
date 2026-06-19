@@ -372,22 +372,44 @@ function graficarLinea(dataPorHora, titulo, unidad) {
 }
 
 // ── REPORTE ───────────────────────────────────────────────────────────────────
+// Número de WhatsApp del manager (con código de país, sin + ni espacios)
+// Ejemplo: '15551234567' para México/USA. Dejar vacío para que el operador elija contacto.
+const MANAGER_WA = '';
+
 async function descargarExcel() {
   if (!turnoActivo) return alert('No hay turno activo');
+
+  const btn = document.querySelector('.btn-reporte');
+  btn.textContent = '⏳ Generando...';
+  btn.disabled = true;
+
   try {
-    const res = await fetch(`/api/reporte/excel/${turnoActivo.id}`);
+    const res = await fetch(`/api/reporte/excel/${turnoActivo.id}`, { method: 'POST' });
     if (!res.ok) throw new Error('Error generando el reporte');
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const { url, filename } = await res.json();
+
     const [y,m,d] = turnoActivo.fecha.split('-');
-    a.download = `Reporte_${turnoActivo.turno}_${d}${m}${y}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-    // Mostrar instrucciones para WhatsApp
-    document.getElementById('modalWhatsapp').classList.remove('hidden');
-  } catch (e) { alert(e.message); }
+    const total = prodRows.reduce((s,r) => s + r.cantidad, 0);
+    const totalMin = muertosRows.reduce((s,r) => s + r.minutos, 0);
+
+    const msg =
+      `📊 *CUSTOM CRATES & PALLETS, INC.*\n` +
+      `Reporte Turno ${turnoActivo.turno} — ${d}/${m}/${y}\n\n` +
+      `✅ Total producción: *${total.toLocaleString()} pzs*\n` +
+      `⏸ Tiempo muerto: *${totalMin} min*\n\n` +
+      `📥 Descarga el reporte Excel:\n${url}`;
+
+    const waUrl = MANAGER_WA
+      ? `https://wa.me/${MANAGER_WA}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+    window.open(waUrl, '_blank');
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.textContent = '📊 Generar Reporte Excel';
+    btn.disabled = false;
+  }
 }
 
 function compartirReporte() {

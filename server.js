@@ -1,8 +1,14 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const ExcelJS = require('exceljs');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+
+// Carpeta temporal para reportes
+const TEMP_DIR = path.join(os.tmpdir(), 'clavadora-reportes');
+if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
 const app = express();
 const PORT = 3000;
@@ -175,8 +181,15 @@ app.get('/api/reporte/turno/:id', (req, res) => {
 
 app.get('/manager', (req, res) => res.sendFile(path.join(__dirname, 'public', 'manager.html')));
 
+// Servir reportes temporales
+app.get('/reportes/:file', (req, res) => {
+  const file = path.join(TEMP_DIR, path.basename(req.params.file));
+  if (!fs.existsSync(file)) return res.status(404).send('Reporte no encontrado o expirado');
+  res.download(file);
+});
+
 // ── REPORTE EXCEL ─────────────────────────────────────────────────────────────
-app.get('/api/reporte/excel/:turnoId', async (req, res) => {
+app.post('/api/reporte/excel/:turnoId', async (req, res) => {
   const turnoId = req.params.turnoId;
 
   const turno = db.prepare('SELECT * FROM turnos WHERE id=?').get(turnoId);
@@ -416,11 +429,17 @@ app.get('/api/reporte/excel/:turnoId', async (req, res) => {
   pie.alignment = { horizontal:'center' };
 
   const fecha = turno.fecha.replace(/-/g,'');
-  const filename = `Reporte_${turno.turno}_${fecha}.xlsx`;
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  await wb.xlsx.write(res);
-  res.end();
+  const uid = crypto.randomUUID().substring(0, 8);
+  const filename = `Reporte_${turno.turno}_${fecha}_${uid}.xlsx`;
+  const filepath = path.join(TEMP_DIR, filename);
+
+  await wb.xlsx.writeFile(filepath);
+
+  // Borrar el archivo después de 2 horas
+  setTimeout(() => fs.unlink(filepath, () => {}), 2 * 60 * 60 * 1000);
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({ url: `${baseUrl}/reportes/${filename}`, filename });
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`http://localhost:${PORT}`));
