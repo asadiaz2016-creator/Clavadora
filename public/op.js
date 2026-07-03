@@ -16,9 +16,9 @@ const HORAS_MATUTINO = [
 ];
 
 const HORAS_VESPERTINO = [
-  '14:30-15:00','15:00-16:00','16:00-17:00','17:00-18:00',
+  '14:30-15:30','15:30-16:30','16:30-17:30','17:30-18:00',
   // 18:00-18:30 Lunch
-  '18:30-19:00','19:00-20:00','20:00-21:00','21:00-22:00','22:00-22:30'
+  '18:30-19:30','19:30-20:30','20:30-21:30','21:30-22:30'
 ];
 
 const HORAS_MATUTINO_CLEAN = [
@@ -28,8 +28,8 @@ const HORAS_MATUTINO_CLEAN = [
 ];
 
 const HORAS_VESPERTINO_CLEAN = [
-  '14:30-15:00','15:00-16:00','16:00-17:00','17:00-18:00',
-  '18:30-19:00','19:00-20:00','20:00-21:00','21:00-22:00','22:00-22:30'
+  '14:30-15:30','15:30-16:30','16:30-17:30','17:30-18:00',
+  '18:30-19:30','19:30-20:30','20:30-21:30','21:30-22:30'
 ];
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ async function api(method, path, body) {
 }
 
 function horaActual() {
-  return turnoActivo?.turno === 'Evening' ? '14:30-15:00' : '06:00-07:00';
+  return turnoActivo?.turno === 'Second' ? '14:30-15:30' : '06:00-07:00';
 }
 
 function fechaHoy() {
@@ -71,7 +71,7 @@ function siguienteHora(horaActual, listaHoras) {
 function llenarHoras(selectId) {
   const sel = document.getElementById(selectId);
   sel.innerHTML = '';
-  const esMat = turnoActivo?.turno === 'Morning';
+  const esMat = turnoActivo?.turno === 'First';
   const horas = esMat ? HORAS_MATUTINO_CLEAN : HORAS_VESPERTINO_CLEAN;
   const horaDefault = ultimaHora ? siguienteHora(ultimaHora, horas) : horas[0];
 
@@ -86,10 +86,10 @@ function llenarHoras(selectId) {
     ['12:15-13:00','13:00-14:00','14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00'].forEach(h => sel.appendChild(makeOpt(h, horaDefault)));
   } else {
     sel.appendChild(optGroup('--- Before lunch ---'));
-    ['14:30-15:00','15:00-16:00','16:00-17:00','17:00-18:00'].forEach(h => sel.appendChild(makeOpt(h, horaDefault)));
+    ['14:30-15:30','15:30-16:30','16:30-17:30','17:30-18:00'].forEach(h => sel.appendChild(makeOpt(h, horaDefault)));
     sel.appendChild(optGroup('☕ Lunch 6:00-6:30 pm'));
     sel.appendChild(optGroup('--- After lunch ---'));
-    ['18:30-19:00','19:00-20:00','20:00-21:00','21:00-22:00','22:00-22:30'].forEach(h => sel.appendChild(makeOpt(h, horaDefault)));
+    ['18:30-19:30','19:30-20:30','20:30-21:30','21:30-22:30'].forEach(h => sel.appendChild(makeOpt(h, horaDefault)));
   }
 }
 

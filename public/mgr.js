@@ -58,7 +58,7 @@ async function cargarDia() {
       </div>
     `;
 
-    const TURNOS = ['Morning','Evening','Night'];
+    const TURNOS = ['First','Second','Night'];
     TURNOS.forEach(turno => {
       const tInfo = turnos.find(t => t.turno === turno);
       if (!tInfo) return;
