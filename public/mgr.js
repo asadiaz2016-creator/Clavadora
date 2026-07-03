@@ -26,10 +26,10 @@ function showTab(id, btn) {
 function fmtFecha(str) {
   if (!str) return '';
   const [y,m,d] = str.split('-');
-  return `${d}/${m}/${y}`;
+  return `${m}/${d}/${y}`;
 }
 
-// ── POR DÍA ──────────────────────────────────────────────────────────────────
+// ── BY DAY ────────────────────────────────────────────────────────────────────
 async function cargarDia() {
   const fecha = document.getElementById('dFecha').value;
   if (!fecha) return;
@@ -39,28 +39,26 @@ async function cargarDia() {
     el.innerHTML = '';
 
     if (!turnos.length) {
-      el.innerHTML = '<div class="empty-state">Sin producción este día</div>';
+      el.innerHTML = '<div class="empty-state">No production for this day</div>';
       return;
     }
 
-    // Total global
     const granTotal = prod.reduce((s, r) => s + r.total, 0);
     const granMin = tiempos.reduce((s, r) => s + r.minutos, 0);
     el.innerHTML = `
       <div class="resumen-cards">
         <div class="stat-card">
           <div class="stat-num">${granTotal.toLocaleString()}</div>
-          <div class="stat-label">Total Piezas</div>
+          <div class="stat-label">Total Pieces</div>
         </div>
         <div class="stat-card">
           <div class="stat-num warning">${granMin}</div>
-          <div class="stat-label">Min. Muerto</div>
+          <div class="stat-label">Downtime Min.</div>
         </div>
       </div>
     `;
 
-    // Por turno
-    const TURNOS = ['Matutino','Vespertino','Nocturno'];
+    const TURNOS = ['Morning','Evening','Night'];
     TURNOS.forEach(turno => {
       const tInfo = turnos.find(t => t.turno === turno);
       if (!tInfo) return;
@@ -77,26 +75,26 @@ async function cargarDia() {
       prodTurno.forEach(r => {
         modelosHTML += `<div class="modelo-row"><span class="modelo-nombre">${r.modelo}</span><span class="modelo-cant">${r.total.toLocaleString()}</span></div>`;
       });
-      if (!prodTurno.length) modelosHTML = '<div style="color:#94a3b8;font-size:.85rem">Sin producción registrada</div>';
+      if (!prodTurno.length) modelosHTML = '<div style="color:#94a3b8;font-size:.85rem">No production recorded</div>';
 
-      const estado = tInfo.estado === 'abierto' ? '🟢 Abierto' : '🔴 Cerrado';
+      const estado = tInfo.estado === 'abierto' ? '🟢 Open' : '🔴 Closed';
       card.innerHTML = `
         <div class="turno-card-header">
           <div>
-            <div class="turno-nombre">Turno ${turno}</div>
-            <div class="turno-sub">${estado}${minTurno ? ` · ⏸ ${minTurno} min muertos` : ''}</div>
+            <div class="turno-nombre">${turno} Shift</div>
+            <div class="turno-sub">${estado}${minTurno ? ` · ⏸ ${minTurno} min downtime` : ''}</div>
           </div>
           <div class="turno-total">${totalTurno.toLocaleString()}</div>
         </div>
         <div class="turno-modelos">${modelosHTML}</div>
-        <button class="btn-ver-detalle" onclick="verDetalle(${tInfo.id}, '${turno}', '${fecha}')">Ver detalle completo</button>
+        <button class="btn-ver-detalle" onclick="verDetalle(${tInfo.id}, '${turno}', '${fecha}')">View full detail</button>
       `;
       el.appendChild(card);
 
       if (muertosTurno.length) {
         const mDiv = document.createElement('div');
         mDiv.className = 'muertos-wrap';
-        let mHTML = `<div class="muertos-title">⏸ Tiempos Muertos — ${turno}</div>`;
+        let mHTML = `<div class="muertos-title">⏸ Downtime — ${turno} Shift</div>`;
         muertosTurno.forEach(r => {
           mHTML += `<div class="muerto-row"><span>${r.motivo}</span><span style="font-weight:700;color:#d97706">${r.minutos} min</span></div>`;
         });
@@ -107,7 +105,7 @@ async function cargarDia() {
   } catch (e) { alert(e.message); }
 }
 
-// ── RANGO ─────────────────────────────────────────────────────────────────────
+// ── RANGE ─────────────────────────────────────────────────────────────────────
 async function cargarRango() {
   const desde = document.getElementById('rDesde').value;
   const hasta = document.getElementById('rHasta').value;
@@ -116,15 +114,14 @@ async function cargarRango() {
     const rows = await api('GET', `/api/reporte/rango?desde=${desde}&hasta=${hasta}`);
     const el = document.getElementById('rResultado');
     el.innerHTML = '';
-    if (!rows.length) { el.innerHTML = '<div class="empty-state">Sin producción en ese rango</div>'; return; }
+    if (!rows.length) { el.innerHTML = '<div class="empty-state">No production for this range</div>'; return; }
 
     const granTotal = rows.reduce((s, r) => s + r.total, 0);
     const bar = document.createElement('div');
     bar.className = 'gran-total-bar';
-    bar.innerHTML = `<span class="gt-label">Total del período</span><span class="gt-num">${granTotal.toLocaleString()} pzs</span>`;
+    bar.innerHTML = `<span class="gt-label">Period total</span><span class="gt-num">${granTotal.toLocaleString()} pcs</span>`;
     el.appendChild(bar);
 
-    // Agrupar por fecha
     const porFecha = {};
     rows.forEach(r => {
       if (!porFecha[r.fecha]) porFecha[r.fecha] = [];
@@ -144,7 +141,7 @@ async function cargarRango() {
         div.className = 'rango-row';
         div.innerHTML = `
           <div class="rango-info">
-            <span class="rango-fecha">Turno ${r.turno}</span>
+            <span class="rango-fecha">${r.turno} Shift</span>
             <span class="rango-desc">${r.modelo}</span>
           </div>
           <span class="rango-cant">${r.total.toLocaleString()}</span>
@@ -156,24 +153,23 @@ async function cargarRango() {
   } catch (e) { alert(e.message); }
 }
 
-// ── DETALLE TURNO ─────────────────────────────────────────────────────────────
+// ── SHIFT DETAIL ──────────────────────────────────────────────────────────────
 async function verDetalle(id, turno, fecha) {
-  document.getElementById('detalleTitulo').textContent = `${turno} — ${fmtFecha(fecha)}`;
+  document.getElementById('detalleTitulo').textContent = `${turno} Shift — ${fmtFecha(fecha)}`;
   const { prod, tiempos } = await api('GET', `/api/reporte/turno/${id}`);
   const el = document.getElementById('detalleContenido');
   el.innerHTML = '';
 
   if (!prod.length && !tiempos.length) {
-    el.innerHTML = '<div class="empty-state">Sin registros</div>';
+    el.innerHTML = '<div class="empty-state">No records</div>';
   } else {
-    // Producción por hora
     const porHora = {};
     prod.forEach(r => { if (!porHora[r.hora]) porHora[r.hora] = []; porHora[r.hora].push(r); });
 
     if (Object.keys(porHora).length) {
       const h = document.createElement('div');
       h.className = 'detalle-hora';
-      h.textContent = 'Producción';
+      h.textContent = 'Production';
       el.appendChild(h);
       Object.keys(porHora).sort().forEach(hora => {
         porHora[hora].forEach(r => {
@@ -188,7 +184,7 @@ async function verDetalle(id, turno, fecha) {
     if (tiempos.length) {
       const h2 = document.createElement('div');
       h2.className = 'detalle-hora';
-      h2.textContent = 'Tiempos Muertos';
+      h2.textContent = 'Downtime';
       el.appendChild(h2);
       tiempos.forEach(r => {
         const row = document.createElement('div');
@@ -204,7 +200,7 @@ async function verDetalle(id, turno, fecha) {
 
 function cerrarDetalle() { document.getElementById('modalDetalle').classList.add('hidden'); }
 
-// ── MODELOS ───────────────────────────────────────────────────────────────────
+// ── MODELS ────────────────────────────────────────────────────────────────────
 async function cargarModelos() {
   const rows = await api('GET', '/api/modelos');
   const el = document.getElementById('listaModelos');
@@ -228,7 +224,7 @@ async function agregarModelo() {
 }
 
 async function eliminarModelo(id) {
-  if (!confirm('¿Desactivar este modelo?')) return;
+  if (!confirm('Deactivate this model?')) return;
   await api('DELETE', `/api/modelos/${id}`);
   cargarModelos();
 }

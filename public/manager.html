@@ -1,57 +1,57 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#1e293b">
-  <title>Manager — Clavadora</title>
+  <title>Manager — Nailing Machine</title>
   <link rel="stylesheet" href="mgr.css">
 </head>
 <body>
   <header class="mgr-header">
-    <div class="mgr-logo">🔨 Clavadora</div>
+    <div class="mgr-logo">🔨 Nailing Machine</div>
     <span class="mgr-badge">Manager</span>
   </header>
 
   <div class="mgr-tabs">
-    <button class="mgr-tab activa" onclick="showTab('tabDia', this)">Por Día</button>
-    <button class="mgr-tab" onclick="showTab('tabRango', this)">Rango</button>
-    <button class="mgr-tab" onclick="showTab('tabModelos', this)">Modelos</button>
+    <button class="mgr-tab activa" onclick="showTab('tabDia', this)">By Day</button>
+    <button class="mgr-tab" onclick="showTab('tabRango', this)">Range</button>
+    <button class="mgr-tab" onclick="showTab('tabModelos', this)">Models</button>
   </div>
 
-  <!-- TAB: POR DÍA -->
+  <!-- TAB: BY DAY -->
   <div id="tabDia" class="mgr-tab-content activa">
     <div class="filtro-row">
       <input type="date" id="dFecha" class="field-date">
-      <button class="btn-buscar" onclick="cargarDia()">Ver</button>
+      <button class="btn-buscar" onclick="cargarDia()">View</button>
     </div>
 
     <div id="dResultado"></div>
   </div>
 
-  <!-- TAB: RANGO -->
+  <!-- TAB: RANGE -->
   <div id="tabRango" class="mgr-tab-content">
     <div class="filtro-row">
       <input type="date" id="rDesde" class="field-date">
       <span style="color:#64748b;padding:0 .25rem">–</span>
       <input type="date" id="rHasta" class="field-date">
-      <button class="btn-buscar" onclick="cargarRango()">Ver</button>
+      <button class="btn-buscar" onclick="cargarRango()">View</button>
     </div>
     <div id="rResultado"></div>
   </div>
 
-  <!-- TAB: MODELOS -->
+  <!-- TAB: MODELS -->
   <div id="tabModelos" class="mgr-tab-content">
     <div class="card" style="margin:1rem">
       <div class="filtro-row" style="margin-bottom:0">
-        <input type="text" id="nuevoModelo" class="field-date" placeholder="Ej: 48X40XX" style="text-transform:uppercase;flex:1">
-        <button class="btn-buscar" onclick="agregarModelo()">+ Agregar</button>
+        <input type="text" id="nuevoModelo" class="field-date" placeholder="Ex: 48X40XX" style="text-transform:uppercase;flex:1">
+        <button class="btn-buscar" onclick="agregarModelo()">+ Add</button>
       </div>
     </div>
     <div id="listaModelos" style="padding:0 1rem;display:flex;flex-direction:column;gap:.5rem"></div>
   </div>
 
-  <!-- MODAL DETALLE TURNO -->
+  <!-- MODAL: SHIFT DETAIL -->
   <div id="modalDetalle" class="modal-overlay hidden">
     <div class="modal">
       <div class="modal-header">
