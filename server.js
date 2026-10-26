@@ -256,7 +256,7 @@ app.post('/api/reporte/excel/:turnoId', async (req, res) => {
   // ── HEADER ────────────────────────────────────────────────────────────────
   ws.mergeCells('B1:F1');
   const r1 = ws.getCell('B1');
-  r1.value = 'CUSTOM CRATES & PALLETS, LTD.';
+  r1.value = 'TARIMAS REGIAS';
   r1.font = { bold:true, size:18, color:{argb:BLANCO} };
   r1.fill = { type:'pattern', pattern:'solid', fgColor:{argb:ROJO} };
   r1.alignment = { vertical:'middle', horizontal:'center' };

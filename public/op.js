@@ -387,7 +387,7 @@ async function descargarExcel() {
     const totalMin = muertosRows.reduce((s,r) => s + r.minutos, 0);
 
     const msg =
-      `📊 *CUSTOM CRATES & PALLETS, LTD.*\n` +
+      `📊 *TARIMAS REGIAS*\n` +
       `${turnoActivo.turno} Shift Report — ${m}/${d}/${y}\n\n` +
       `✅ Total production: *${total.toLocaleString()} pcs*\n` +
       `⏸ Downtime: *${totalMin} min*\n\n` +
@@ -444,7 +444,7 @@ function compartirReporte() {
 
   let txt = '';
   txt += `${SEP}\n`;
-  txt += ` CUSTOM CRATES & PALLETS, LTD.\n`;
+  txt += ` TARIMAS REGIAS\n`;
   txt += `${SEP}\n`;
   txt += ` Production Report\n`;
   txt += ` Shift  : ${turnoActivo.turno}\n`;
